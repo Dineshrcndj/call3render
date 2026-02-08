@@ -1,100 +1,500 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Call Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Desk | Live Calls</title>
+    <meta name="theme-color" content="#667eea">
+    <link rel="manifest" href="manifest.json">
     <style>
-        body { font-family: Arial; padding: 20px; }
-        button { padding: 15px 30px; font-size: 18px; margin: 10px; }
-        .status { padding: 10px; margin: 10px 0; }
-        .online { background: #4CAF50; color: white; }
-        .offline { background: #f44336; color: white; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            font-size: 60px;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: #a0c8e0;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        
+        .status-card {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(46, 125, 50, 0.1) 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(76, 175, 80, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #f44336;
+            box-shadow: 0 0 20px currentColor;
+        }
+        
+        .status-dot.online {
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-text {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .stat-box:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 5px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #a0c8e0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .call-alert {
+            background: linear-gradient(135deg, rgba(156, 39, 176, 0.2) 0%, rgba(123, 31, 162, 0.2) 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 25px 0;
+            border: 2px solid rgba(156, 39, 176, 0.3);
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .call-alert.active {
+            display: block;
+        }
+        
+        .call-icon {
+            font-size: 50px;
+            text-align: center;
+            margin-bottom: 15px;
+            animation: ring 1.5s infinite;
+        }
+        
+        @keyframes ring {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+        
+        .call-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 140px;
+            justify-content: center;
+        }
+        
+        .btn-accept {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+        }
+        
+        .btn-reject {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        audio {
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .pwa-install {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .install-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .install-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification-success {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+        }
+        
+        .notification-error {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+        }
+        
+        @media (max-width: 600px) {
+            .container { padding: 20px; margin: 10px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .call-controls { flex-direction: column; }
+            .btn { width: 100%; }
+        }
     </style>
 </head>
 <body>
-    <h1>📞 Call Test</h1>
-    <div id="status" class="status offline">Loading...</div>
-    <button id="callBtn" disabled>Call</button>
-    <button id="endBtn" disabled>End</button>
-    <audio id="remoteAudio" controls></audio>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎧</div>
+            <h1>Support Desk Console</h1>
+            <p class="subtitle">24/7 Call Receiver • PWA Ready • Beautiful Interface</p>
+        </div>
+        
+        <div class="status-card">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <div class="status-text" id="statusText">Connecting...</div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-value" id="connectedUsers">0</div>
+                    <div class="stat-label">Users Online</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalCalls">0</div>
+                    <div class="stat-label">Total Calls</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="activeCalls">0</div>
+                    <div class="stat-label">Active Calls</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="call-alert" id="callAlert">
+            <div class="call-icon">📞</div>
+            <h2 style="text-align: center; margin-bottom: 10px;">Incoming Call!</h2>
+            <p style="text-align: center; color: #e1bee7;" id="callerInfo">User is calling...</p>
+            
+            <div class="call-controls">
+                <button class="btn btn-accept" id="acceptBtn">
+                    <span>✅</span> Accept Call
+                </button>
+                <button class="btn btn-reject" id="rejectBtn">
+                    <span>❌</span> Reject
+                </button>
+            </div>
+        </div>
+        
+        <audio id="remoteAudio" controls autoplay style="display: none;"></audio>
+        
+        <div class="pwa-install">
+            <button class="install-btn" id="installBtn">
+                <span>📱</span> Install as App
+            </button>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
     
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script>
-        let peer, call, localStream;
+        let peer, localStream, currentCall, stats = {totalCalls: 0, activeCalls: 0};
         
-        // ALTERNATIVE SERVER that works
+        // Initialize
         async function init() {
-            // 1. Get microphone FIRST
             try {
+                // Get microphone
                 localStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: true,
-                    video: false 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
                 });
-                console.log('✅ Microphone access granted');
-            } catch (err) {
-                console.log('❌ Microphone error:', err);
-                document.getElementById('status').textContent = 'Allow microphone access';
-                return;
+                
+                // Connect to signaling server
+                peer = new Peer('support-desk-pro', {
+                    host: '0.peerjs.com',
+                    port: 443,
+                    path: '/',
+                    secure: true,
+                    config: {
+                        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                    },
+                    debug: 2
+                });
+                
+                peer.on('open', (id) => {
+                    updateStatus('online', 'Ready for calls');
+                    showNotification('Connected to server', 'success');
+                });
+                
+                peer.on('call', (incomingCall) => {
+                    currentCall = incomingCall;
+                    stats.totalCalls++;
+                    updateStats();
+                    showIncomingCall();
+                });
+                
+                peer.on('error', (err) => {
+                    console.log('Error:', err);
+                    updateStatus('offline', 'Connection error');
+                });
+                
+                // Auto-reconnect
+                peer.on('disconnected', () => {
+                    updateStatus('offline', 'Reconnecting...');
+                    setTimeout(() => peer.reconnect(), 3000);
+                });
+                
+            } catch (error) {
+                updateStatus('offline', 'Microphone access needed');
             }
-            
-            // 2. Connect to server (using working server)
-            peer = new Peer('user-' + Date.now(), {
-                host: '0.peerjs.com',  // WORKING SERVER
-                port: 443,
-                path: '/',
-                secure: true,
-                config: { 
-                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-                },
-                debug: 2
-            });
-            
-            peer.on('open', id => {
-                document.getElementById('status').className = 'status online';
-                document.getElementById('status').textContent = 'Online - Ready to call';
-                document.getElementById('callBtn').disabled = false;
-                console.log('✅ Connected with ID:', id);
-            });
-            
-            peer.on('error', err => {
-                console.log('Peer error:', err.type);
-                document.getElementById('status').className = 'status offline';
-                document.getElementById('status').textContent = 'Error: ' + err.type;
-            });
-            
-            peer.on('disconnected', () => {
-                console.log('Disconnected - reconnecting...');
-                peer.reconnect();
-            });
         }
         
-        // Call button
-        document.getElementById('callBtn').onclick = () => {
-            document.getElementById('status').textContent = 'Calling owner...';
+        function updateStatus(state, message) {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
             
-            call = peer.call('test-owner-123', localStream);
+            dot.className = 'status-dot ' + state;
+            text.textContent = message;
+        }
+        
+        function updateStats() {
+            document.getElementById('connectedUsers').textContent = peer?._connections?.size || 0;
+            document.getElementById('totalCalls').textContent = stats.totalCalls;
+            document.getElementById('activeCalls').textContent = stats.activeCalls;
+        }
+        
+        function showIncomingCall() {
+            const alert = document.getElementById('callAlert');
+            alert.classList.add('active');
+            updateStatus('ringing', 'Incoming call!');
+        }
+        
+        function hideIncomingCall() {
+            const alert = document.getElementById('callAlert');
+            alert.classList.remove('active');
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification notification-${type}`;
+            notification.style.display = 'block';
             
-            call.on('stream', remoteStream => {
-                document.getElementById('remoteAudio').srcObject = remoteStream;
-                document.getElementById('status').textContent = 'Connected!';
-                document.getElementById('callBtn').disabled = true;
-                document.getElementById('endBtn').disabled = false;
-            });
-            
-            call.on('close', () => {
-                document.getElementById('remoteAudio').srcObject = null;
-                document.getElementById('callBtn').disabled = false;
-                document.getElementById('endBtn').disabled = true;
-                document.getElementById('status').textContent = 'Call ended';
-            });
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Accept call
+        document.getElementById('acceptBtn').onclick = () => {
+            if (currentCall && localStream) {
+                currentCall.answer(localStream);
+                stats.activeCalls = 1;
+                updateStats();
+                
+                currentCall.on('stream', (remoteStream) => {
+                    const audio = document.getElementById('remoteAudio');
+                    audio.srcObject = remoteStream;
+                    audio.style.display = 'block';
+                    hideIncomingCall();
+                    updateStatus('busy', 'In call with user');
+                    showNotification('Call connected', 'success');
+                });
+                
+                currentCall.on('close', () => {
+                    stats.activeCalls = 0;
+                    updateStats();
+                    document.getElementById('remoteAudio').srcObject = null;
+                    document.getElementById('remoteAudio').style.display = 'none';
+                    updateStatus('online', 'Ready for calls');
+                    showNotification('Call ended', 'success');
+                });
+            }
         };
         
-        // End call
-        document.getElementById('endBtn').onclick = () => {
-            if (call) call.close();
+        // Reject call
+        document.getElementById('rejectBtn').onclick = () => {
+            if (currentCall) currentCall.close();
+            hideIncomingCall();
+            updateStatus('online', 'Ready for calls');
+            showNotification('Call rejected', 'error');
         };
         
-        // Start everything
+        // PWA Installation
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').style.display = 'inline-flex';
+        });
+        
+        document.getElementById('installBtn').onclick = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    showNotification('App installed!', 'success');
+                }
+                deferredPrompt = null;
+            }
+        };
+        
+        // Start
         init();
+        setInterval(updateStats, 5000);
+        
+        // Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker registered'))
+                .catch(err => console.log('SW registration failed:', err));
+        }
+        
+        // Keep alive
+        setInterval(() => {
+            if (peer && !peer.disconnected) {
+                // Send ping to keep connection alive
+            }
+        }, 30000);
     </script>
 </body>
 </html>
