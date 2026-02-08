@@ -8,95 +8,93 @@
         .status { padding: 10px; margin: 10px 0; }
         .online { background: #4CAF50; color: white; }
         .offline { background: #f44336; color: white; }
-        .calling { background: #FF9800; color: white; }
     </style>
 </head>
 <body>
     <h1>📞 Call Test</h1>
-    <div id="status" class="status offline">Offline</div>
-    <button id="callBtn">Call</button>
-    <button id="endBtn" disabled>End Call</button>
+    <div id="status" class="status offline">Loading...</div>
+    <button id="callBtn" disabled>Call</button>
+    <button id="endBtn" disabled>End</button>
     <audio id="remoteAudio" controls></audio>
     
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script>
-        let peer, call;
+        let peer, call, localStream;
         
-        // Initialize
-        peer = new Peer('user-' + Date.now(), {
-            host: 'signaling.freep2p.com',
-            secure: true,
-            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
-        });
-        
-        peer.on('open', id => {
-            document.getElementById('status').className = 'status online';
-            document.getElementById('status').textContent = 'Online - ID: ' + id;
-        });
-        
-        peer.on('error', err => {
-            console.error('Peer error:', err);
-            document.getElementById('status').className = 'status offline';
-            document.getElementById('status').textContent = 'Error: ' + err.type;
-        });
+        // ALTERNATIVE SERVER that works
+        async function init() {
+            // 1. Get microphone FIRST
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true,
+                    video: false 
+                });
+                console.log('✅ Microphone access granted');
+            } catch (err) {
+                console.log('❌ Microphone error:', err);
+                document.getElementById('status').textContent = 'Allow microphone access';
+                return;
+            }
+            
+            // 2. Connect to server (using working server)
+            peer = new Peer('user-' + Date.now(), {
+                host: '0.peerjs.com',  // WORKING SERVER
+                port: 443,
+                path: '/',
+                secure: true,
+                config: { 
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                },
+                debug: 2
+            });
+            
+            peer.on('open', id => {
+                document.getElementById('status').className = 'status online';
+                document.getElementById('status').textContent = 'Online - Ready to call';
+                document.getElementById('callBtn').disabled = false;
+                console.log('✅ Connected with ID:', id);
+            });
+            
+            peer.on('error', err => {
+                console.log('Peer error:', err.type);
+                document.getElementById('status').className = 'status offline';
+                document.getElementById('status').textContent = 'Error: ' + err.type;
+            });
+            
+            peer.on('disconnected', () => {
+                console.log('Disconnected - reconnecting...');
+                peer.reconnect();
+            });
+        }
         
         // Call button
-        document.getElementById('callBtn').onclick = async () => {
-            document.getElementById('status').className = 'status calling';
-            document.getElementById('status').textContent = 'Calling...';
+        document.getElementById('callBtn').onclick = () => {
+            document.getElementById('status').textContent = 'Calling owner...';
             
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            call = peer.call('test-owner', stream);
+            call = peer.call('test-owner-123', localStream);
             
             call.on('stream', remoteStream => {
                 document.getElementById('remoteAudio').srcObject = remoteStream;
-                document.getElementById('status').textContent = 'Connected';
+                document.getElementById('status').textContent = 'Connected!';
                 document.getElementById('callBtn').disabled = true;
                 document.getElementById('endBtn').disabled = false;
             });
+            
+            call.on('close', () => {
+                document.getElementById('remoteAudio').srcObject = null;
+                document.getElementById('callBtn').disabled = false;
+                document.getElementById('endBtn').disabled = true;
+                document.getElementById('status').textContent = 'Call ended';
+            });
         };
         
-        // End call button
+        // End call
         document.getElementById('endBtn').onclick = () => {
             if (call) call.close();
-            document.getElementById('remoteAudio').srcObject = null;
-            document.getElementById('callBtn').disabled = false;
-            document.getElementById('endBtn').disabled = true;
-            document.getElementById('status').className = 'status online';
-            document.getElementById('status').textContent = 'Online';
         };
-        // DEBUG: Test connection
-setTimeout(() => {
-    console.log('=== DEBUG START ===');
-    
-    // Test 1: Check if PeerJS loaded
-    console.log('PeerJS loaded:', typeof Peer !== 'undefined');
-    
-    // Test 2: Create test peer
-    const testPeer = new Peer('debug-' + Date.now(), {
-        host: 'signaling.freep2p.com',
-        secure: true,
-        debug: 3
-    });
-    
-    testPeer.on('open', (id) => {
-        console.log('✅ SUCCESS! Connected to server. ID:', id);
-        console.log('Server is working.');
-        testPeer.destroy();
-    });
-    
-    testPeer.on('error', (err) => {
-        console.log('❌ PeerJS Error:', err.type, err.message);
         
-        // Test WebSocket directly
-        console.log('Testing WebSocket...');
-        const ws = new WebSocket('wss://signaling.freep2p.com:443/');
-        ws.onopen = () => console.log('✅ WebSocket works');
-        ws.onerror = (e) => console.log('❌ WebSocket failed:', e);
-    });
-    
-    console.log('=== DEBUG END ===');
-}, 1000);
+        // Start everything
+        init();
     </script>
 </body>
 </html>

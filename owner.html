@@ -1,20 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Owner Test</title>
+    <title>Owner</title>
     <style>
         body { font-family: Arial; padding: 20px; }
         .status { padding: 10px; margin: 10px 0; }
         .online { background: #4CAF50; color: white; }
         .offline { background: #f44336; color: white; }
-        .ringing { background: #FF9800; color: white; animation: ring 1s infinite; }
-        @keyframes ring { 50% { opacity: 0.5; } }
+        .ringing { background: #FF9800; color: white; }
     </style>
 </head>
 <body>
-    <h1>👂 Owner Test</h1>
-    <div id="status" class="status offline">Offline</div>
-    <div id="callAlert" style="display:none; padding:20px; background:#FF9800;">
+    <h1>👂 Owner</h1>
+    <div id="status" class="status offline">Loading...</div>
+    <div id="callAlert" style="display:none;">
         <h3>📞 Incoming Call!</h3>
         <button id="answerBtn">Answer</button>
         <button id="rejectBtn">Reject</button>
@@ -25,34 +24,56 @@
     <script>
         let peer, localStream, currentCall;
         
-        // Initialize with FIXED ID
-        peer = new Peer('test-owner', {
-            host: 'signaling.freep2p.com',
-            secure: true,
-            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
-        });
-        
-        peer.on('open', id => {
-            document.getElementById('status').className = 'status online';
-            document.getElementById('status').textContent = 'Online - ID: ' + id;
-        });
-        
-        peer.on('error', err => {
-            console.error('Peer error:', err);
-            document.getElementById('status').className = 'status offline';
-            document.getElementById('status').textContent = 'Error: ' + err.type;
-        });
-        
-        peer.on('call', incomingCall => {
-            currentCall = incomingCall;
-            document.getElementById('status').className = 'status ringing';
-            document.getElementById('status').textContent = 'Incoming Call!';
-            document.getElementById('callAlert').style.display = 'block';
-        });
-        
-        // Get microphone access
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => { localStream = stream; });
+        async function init() {
+            // 1. Get microphone
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true,
+                    video: false 
+                });
+                console.log('✅ Owner microphone ready');
+            } catch (err) {
+                console.log('❌ Owner microphone error:', err);
+                document.getElementById('status').textContent = 'Allow microphone';
+                return;
+            }
+            
+            // 2. Connect to server - MUST USE SAME SERVER AS USER
+            peer = new Peer('test-owner-123', {  // FIXED ID
+                host: '0.peerjs.com',
+                port: 443,
+                path: '/',
+                secure: true,
+                config: { 
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                },
+                debug: 2
+            });
+            
+            peer.on('open', id => {
+                document.getElementById('status').className = 'status online';
+                document.getElementById('status').textContent = 'Online - ID: ' + id;
+                console.log('✅ Owner connected:', id);
+            });
+            
+            peer.on('error', err => {
+                console.log('Owner error:', err.type);
+                document.getElementById('status').className = 'status offline';
+                document.getElementById('status').textContent = 'Error: ' + err.type;
+            });
+            
+            peer.on('call', incomingCall => {
+                currentCall = incomingCall;
+                document.getElementById('status').className = 'status ringing';
+                document.getElementById('status').textContent = 'Incoming Call!';
+                document.getElementById('callAlert').style.display = 'block';
+            });
+            
+            peer.on('disconnected', () => {
+                console.log('Owner disconnected - reconnecting...');
+                peer.reconnect();
+            });
+        }
         
         // Answer call
         document.getElementById('answerBtn').onclick = () => {
@@ -73,38 +94,9 @@
             document.getElementById('status').className = 'status online';
             document.getElementById('status').textContent = 'Online';
         };
-        // DEBUG: Test connection
-setTimeout(() => {
-    console.log('=== DEBUG START ===');
-    
-    // Test 1: Check if PeerJS loaded
-    console.log('PeerJS loaded:', typeof Peer !== 'undefined');
-    
-    // Test 2: Create test peer
-    const testPeer = new Peer('debug-' + Date.now(), {
-        host: 'signaling.freep2p.com',
-        secure: true,
-        debug: 3
-    });
-    
-    testPeer.on('open', (id) => {
-        console.log('✅ SUCCESS! Connected to server. ID:', id);
-        console.log('Server is working.');
-        testPeer.destroy();
-    });
-    
-    testPeer.on('error', (err) => {
-        console.log('❌ PeerJS Error:', err.type, err.message);
         
-        // Test WebSocket directly
-        console.log('Testing WebSocket...');
-        const ws = new WebSocket('wss://signaling.freep2p.com:443/');
-        ws.onopen = () => console.log('✅ WebSocket works');
-        ws.onerror = (e) => console.log('❌ WebSocket failed:', e);
-    });
-    
-    console.log('=== DEBUG END ===');
-}, 1000);
+        // Start
+        init();
     </script>
 </body>
 </html>
