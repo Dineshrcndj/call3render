@@ -65,6 +65,38 @@
             document.getElementById('status').className = 'status online';
             document.getElementById('status').textContent = 'Online';
         };
+        // DEBUG: Test connection
+setTimeout(() => {
+    console.log('=== DEBUG START ===');
+    
+    // Test 1: Check if PeerJS loaded
+    console.log('PeerJS loaded:', typeof Peer !== 'undefined');
+    
+    // Test 2: Create test peer
+    const testPeer = new Peer('debug-' + Date.now(), {
+        host: 'signaling.freep2p.com',
+        secure: true,
+        debug: 3
+    });
+    
+    testPeer.on('open', (id) => {
+        console.log('✅ SUCCESS! Connected to server. ID:', id);
+        console.log('Server is working.');
+        testPeer.destroy();
+    });
+    
+    testPeer.on('error', (err) => {
+        console.log('❌ PeerJS Error:', err.type, err.message);
+        
+        // Test WebSocket directly
+        console.log('Testing WebSocket...');
+        const ws = new WebSocket('wss://signaling.freep2p.com:443/');
+        ws.onopen = () => console.log('✅ WebSocket works');
+        ws.onerror = (e) => console.log('❌ WebSocket failed:', e);
+    });
+    
+    console.log('=== DEBUG END ===');
+}, 1000);
     </script>
 </body>
 </html>
