@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Owner Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .status { padding: 10px; margin: 10px 0; }
+        .online { background: #4CAF50; color: white; }
+        .offline { background: #f44336; color: white; }
+        .ringing { background: #FF9800; color: white; animation: ring 1s infinite; }
+        @keyframes ring { 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <h1>👂 Owner Test</h1>
+    <div id="status" class="status offline">Offline</div>
+    <div id="callAlert" style="display:none; padding:20px; background:#FF9800;">
+        <h3>📞 Incoming Call!</h3>
+        <button id="answerBtn">Answer</button>
+        <button id="rejectBtn">Reject</button>
+    </div>
+    <audio id="remoteAudio" controls></audio>
+    
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script>
+        let peer, localStream, currentCall;
+        
+        // Initialize with FIXED ID
+        peer = new Peer('test-owner', {
+            host: 'signaling.freep2p.com',
+            secure: true,
+            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+        });
+        
+        peer.on('open', id => {
+            document.getElementById('status').className = 'status online';
+            document.getElementById('status').textContent = 'Online - ID: ' + id;
+        });
+        
+        peer.on('error', err => {
+            console.error('Peer error:', err);
+            document.getElementById('status').className = 'status offline';
+            document.getElementById('status').textContent = 'Error: ' + err.type;
+        });
+        
+        peer.on('call', incomingCall => {
+            currentCall = incomingCall;
+            document.getElementById('status').className = 'status ringing';
+            document.getElementById('status').textContent = 'Incoming Call!';
+            document.getElementById('callAlert').style.display = 'block';
+        });
+        
+        // Get microphone access
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => { localStream = stream; });
+        
+        // Answer call
+        document.getElementById('answerBtn').onclick = () => {
+            if (currentCall && localStream) {
+                currentCall.answer(localStream);
+                currentCall.on('stream', remoteStream => {
+                    document.getElementById('remoteAudio').srcObject = remoteStream;
+                    document.getElementById('callAlert').style.display = 'none';
+                    document.getElementById('status').textContent = 'In Call';
+                });
+            }
+        };
+        
+        // Reject call
+        document.getElementById('rejectBtn').onclick = () => {
+            if (currentCall) currentCall.close();
+            document.getElementById('callAlert').style.display = 'none';
+            document.getElementById('status').className = 'status online';
+            document.getElementById('status').textContent = 'Online';
+        };
+    </script>
+</body>
+</html>

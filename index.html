@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Call Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        button { padding: 15px 30px; font-size: 18px; margin: 10px; }
+        .status { padding: 10px; margin: 10px 0; }
+        .online { background: #4CAF50; color: white; }
+        .offline { background: #f44336; color: white; }
+        .calling { background: #FF9800; color: white; }
+    </style>
+</head>
+<body>
+    <h1>📞 Call Test</h1>
+    <div id="status" class="status offline">Offline</div>
+    <button id="callBtn">Call</button>
+    <button id="endBtn" disabled>End Call</button>
+    <audio id="remoteAudio" controls></audio>
+    
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script>
+        let peer, call;
+        
+        // Initialize
+        peer = new Peer('user-' + Date.now(), {
+            host: 'signaling.freep2p.com',
+            secure: true,
+            config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+        });
+        
+        peer.on('open', id => {
+            document.getElementById('status').className = 'status online';
+            document.getElementById('status').textContent = 'Online - ID: ' + id;
+        });
+        
+        peer.on('error', err => {
+            console.error('Peer error:', err);
+            document.getElementById('status').className = 'status offline';
+            document.getElementById('status').textContent = 'Error: ' + err.type;
+        });
+        
+        // Call button
+        document.getElementById('callBtn').onclick = async () => {
+            document.getElementById('status').className = 'status calling';
+            document.getElementById('status').textContent = 'Calling...';
+            
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            call = peer.call('test-owner', stream);
+            
+            call.on('stream', remoteStream => {
+                document.getElementById('remoteAudio').srcObject = remoteStream;
+                document.getElementById('status').textContent = 'Connected';
+                document.getElementById('callBtn').disabled = true;
+                document.getElementById('endBtn').disabled = false;
+            });
+        };
+        
+        // End call button
+        document.getElementById('endBtn').onclick = () => {
+            if (call) call.close();
+            document.getElementById('remoteAudio').srcObject = null;
+            document.getElementById('callBtn').disabled = false;
+            document.getElementById('endBtn').disabled = true;
+            document.getElementById('status').className = 'status online';
+            document.getElementById('status').textContent = 'Online';
+        };
+    </script>
+</body>
+</html>
